@@ -1,0 +1,43 @@
+{
+  "room": {
+    "length": 3.0,
+    "width": 2.2,
+    "height": 2.6,
+    "door": {
+      "wall": "south",
+      "offset": 1.2,
+      "width": 0.8
+    },
+    "shower": {
+      "wall": "east",
+      "offset": 0.4,
+      "width": 0.9
+    }
+  },
+  "fixtures": [
+    {
+      "id": "lavabo1",
+      "type": "lavabo",
+      "assetId": "CUBE",
+      "wall": "north",
+      "offset": 1.0
+    },
+    {
+      "id": "wc1",
+      "type": "wc",
+      "assetId": "CUBE",
+      "wall": "west",
+      "offset": 1.0
+    }
+  ],
+  "materials": {
+    "floor": "G12345",
+    "walls": "M23001",
+    "showerWall": "G12345"
+  },
+  "brand": {
+    "logoUrl": "https://upload.wikimedia.org/wikipedia/commons/a/ab/Logo_TV_2015.png",
+    "claim": "Trasformiamo il tuo bagno in un'oasi.",
+    "primaryColor": "#00bfa5"
+  }
+}
