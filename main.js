@@ -1,6 +1,6 @@
 // ------------------------------------------------------
-// OasiVR - Player Cinema (DEBUG VISIVO)
-// Pavimento piastrellato, pareti colorate, loop semplice
+// OasiVR - Player Cinema (DEBUG VISIVO MIGLIORATO)
+// Pavimento piastrellato, pareti colorate, camera dentro
 // ------------------------------------------------------
 
 // Libreria di piastrelle di test (codice -> texture)
@@ -21,7 +21,7 @@ const TILE_LIBRARY = {
   }
 };
 
-const LOOP_DURATION = 40; // per ora loop corto per test
+const LOOP_DURATION = 40; // loop corto per test
 
 const canvas = document.getElementById("renderCanvas");
 const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
@@ -39,7 +39,7 @@ function getTileMaterial(scene, code) {
   const def = TILE_LIBRARY[code];
   if (!def) {
     const mat = new BABYLON.PBRMaterial("fallback-" + code, scene);
-    mat.albedoColor = new BABYLColor3(0.8, 0.8, 0.8);
+    mat.albedoColor = new BABYLON.Color3(0.8, 0.8, 0.8);
     mat.roughness = 0.8;
     return mat;
   }
@@ -60,7 +60,8 @@ async function createScene() {
   const scene = new BABYLON.Scene(engine);
   scene.clearColor = new BABYLON.Color4(0.02, 0.02, 0.02, 1);
 
-  const camera = new BABYLON.UniversalCamera("pov", new BABYLON.Vector3(0, 1.6, -4), scene);
+  const cameraHeight = 1.6;
+  const camera = new BABYLON.UniversalCamera("pov", new BABYLON.Vector3(0, cameraHeight, 0), scene);
   camera.minZ = 0.01;
   camera.maxZ = 100;
 
@@ -79,7 +80,7 @@ async function createScene() {
   const floorMat = getTileMaterial(scene, cfg.materials.floor);
   floor.material = floorMat;
 
-  // PARETI (solo colori, per capire il volume)
+  // PARETI (colori piatti per orientarsi)
   const wallNorth = BABYLON.MeshBuilder.CreatePlane("wallNorth", { width: L, height: H }, scene);
   wallNorth.position = new BABYLON.Vector3(0, H / 2, -W / 2);
   wallNorth.rotation.y = Math.PI;
@@ -111,7 +112,7 @@ async function createScene() {
   matEast.diffuseColor = new BABYLON.Color3(0.9, 0.9, 0.2); // giallo
   wallEast.material = matEast;
 
-  // Lavabo semplificato come box
+  // Lavabo semplificato come box sulla parete "north"
   const sink = BABYLON.MeshBuilder.CreateBox("sink", { width: 0.6, height: 0.2, depth: 0.45 }, scene);
   sink.position = new BABYLON.Vector3(0, 0.9, -W / 2 + 0.4);
 
@@ -125,78 +126,14 @@ async function createScene() {
   water.material = waterMat;
   water.isVisible = false;
 
-  // LOGO overlay semplice
+  // LOGO/CLAIM semplice
   const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
   const logo = new BABYLON.GUI.TextBlock();
   logo.text = cfg.brand.claim || "Oasi Bagni";
   logo.color = "white";
   logo.fontSize = 32;
-  logo.alpha = 0; // parte invisibile
+  logo.alpha = 0;
   ui.addControl(logo);
 
-  // ANIMAZIONE POV SEMPLICE (debug)
-  let startTime = performance.now() / 1000;
-
-  scene.onBeforeRenderObservable.add(() => {
-    const now = performance.now() / 1000;
-    let t = (now - startTime) % LOOP_DURATION; // [0, LOOP_DURATION)
-
-    // acqua ON tra 10 e 25 secondi
-    water.isVisible = (t >= 10 && t <= 25);
-
-    // logo visibile solo tra 0-2s (inizio) e 38-40s (fine)
-    if (t < 2 || t > 38) {
-      logo.alpha = 1;
-    } else {
-      logo.alpha = 0;
-    }
-
-    // percorso molto semplice:
-    // 0-10s: fermo vicino alla porta (lontano)
-    // 10-20s: si avvicina al centro
-    // 20-30s: si avvicina al lavandino
-    // 30-40s: torna indietro
-
-    const doorPos = new BABYLON.Vector3(0, 1.6, W / 2 + 1.5);
-    const centerPos = new BABYLON.Vector3(0, 1.6, 0);
-    const lavaboPos = sink.position.add(new BABYLON.Vector3(0, 0.7, 0.8));
-
-    const lerp = (a, b, k) => a.add(b.subtract(a).scale(k));
-    const ease = (x) => (x < 0.5 ? 2 * x * x : -1 + (4 - 2 * x) * x);
-
-    let camPos, target;
-
-    if (t < 10) {
-      camPos = doorPos;
-      target = centerPos;
-    } else if (t < 20) {
-      const tt = (t - 10) / 10;
-      camPos = lerp(doorPos, centerPos, ease(tt));
-      target = centerPos;
-    } else if (t < 30) {
-      const tt = (t - 20) / 10;
-      camPos = lerp(centerPos, lavaboPos, ease(tt));
-      target = sink.position;
-    } else {
-      const tt = (t - 30) / 10;
-      camPos = lerp(lavaboPos, doorPos, ease(tt));
-      target = centerPos;
-    }
-
-    camera.position.copyFrom(camPos);
-    camera.setTarget(target);
-  });
-
-  // WebXR (VR)
-  await scene.createDefaultXRExperienceAsync({
-    floorMeshes: [floor]
-  });
-
-  return scene;
-}
-
-createScene().then(scene => {
-  engine.runRenderLoop(() => scene.render());
-});
-
-window.addEventListener("resize", () => engine.resize());
+  // Posizioni chiave del movimento (tutte DENTRO il bagno)
+  const doorPos = new BABYLON.Vector3(0, c
